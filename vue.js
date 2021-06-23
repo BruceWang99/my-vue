@@ -54,13 +54,16 @@ class Observer {
 			configurable: false,
 			enumerable: true,
 			get: () => {
+				// 如果处于依赖收集阶段
 				if (Dep.target) {
+					// 依赖收集
 					dep.depend();
 				}
 				return val;
 			},
 			set: (newVal) => {
 				if (val !== newVal) {
+					// 依赖更新
 					dep.notify(newVal);
 				}
 				val = newVal;
@@ -174,13 +177,14 @@ class Dep {
 	addSub(sub) {
 		this.subList.push(sub)
 	}
-	// 通知更新 通知所有watcher值改变了
+	// 通知更新 通知所有watcher值要改变了
 	notify(newVal) {
 		this.subList.forEach(sub => {
 			sub.updata(newVal)
 		})
 	}
 }
+// 一个指定的全局位置, 使用window.target 也行
 Dep.target = null
 
 // 创建监听类，监听每个渲染数据地方
@@ -209,9 +213,9 @@ class Watcher {
 		this.callback.call(this.$vm, newVal, this.value)
 	}
 	getVal() {
-		// 获取值时将当前watcher指向Dep.target，方便在数据劫持get函数里建立依赖关系
+		// 进入依赖收集阶段, 让全局的额Dep.target设置为Watcher本身, 那么就是进入依赖收集
 		Dep.target = this;
-		// 获取当前节点位置值
+		// 获取当前节点位置值 会触发 defineProperty的getter方法, 从而依赖收集
 		let val = this.$vm[this.exp];
 		// 获取完之后将Dep.target设置为null
 		Dep.target = null;
